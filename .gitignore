@@ -1,0 +1,6 @@
+# サーバのみの機密（OpenAI APIキー・DB資格情報・LabPayトークン）。公開リポジトリに絶対入れない。
+config.local.php
+
+# ローカル作業ファイル
+*.log
+.DS_Store

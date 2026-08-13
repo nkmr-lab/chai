@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /
+
+# 会話の共有URL等をきれいに: /c/<id> → index.php（フロントのルータが解釈）
+RewriteRule ^c/([A-Za-z0-9_-]+)$ /index.php [L,QSA]
+
+# それ以外の未知パスは index.php へ（SPA フォールバック。実在ファイル/ディレクトリは除外）
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.php [L,QSA]
