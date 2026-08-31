@@ -22,7 +22,7 @@ a{color:var(--accent)}
 
 /* ── サイドバー ── */
 .sidebar{width:264px;flex:0 0 264px;background:var(--bg-side);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;transition:margin-left .2s ease}
+  display:flex;flex-direction:column;transition:transform .2s ease}
 .sidebar-head{padding:12px;display:flex;flex-direction:column;gap:10px}
 .brand{font-size:20px;font-weight:700;padding:4px 6px}
 .btn-new{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
@@ -333,9 +333,12 @@ a{color:var(--accent)}
 
 /* ── モバイル ── */
 @media (max-width:760px){
-  .sidebar{position:fixed;z-index:40;height:100%;margin-left:-264px;box-shadow:var(--shadow)}
-  .app.side-open .sidebar{margin-left:0}
+  /* fixed要素の位置を left:0/top:0 で確定し、transform でスライド（flex内 left:auto の不定を回避） */
+  .sidebar{position:fixed;top:0;left:0;z-index:60;height:100%;transform:translateX(-100%);box-shadow:var(--shadow)}
+  .app.side-open .sidebar{transform:translateX(0)}
   .hamburger{display:block}
+  /* サイドバー外タップで閉じる薄い背景 */
+  .app.side-open::before{content:"";position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50}
 }
 /* タッチ端末：ホバーで出る要素を常時表示（1タップで反応させる＝ダブルタップ不要） */
 @media (hover:none){

@@ -962,8 +962,12 @@
   $('#btnPlan').onclick = () => openPlan('');
   $('#planClose').onclick = () => (planModal.hidden = true);
   planModal.onclick = (e) => { if (e.target === planModal) planModal.hidden = true; };
-  $('#btnMenu').onclick = () => app.classList.toggle('side-open');
+  $('#btnMenu').onclick = (e) => { e.stopPropagation(); app.classList.toggle('side-open'); };
   const closeSidebarMobile = () => app.classList.remove('side-open');
+  // サイドバーを開いている時、外側（背景）タップで閉じる
+  app.addEventListener('click', (e) => {
+    if (app.classList.contains('side-open') && !e.target.closest('#sidebar') && !e.target.closest('#btnMenu')) closeSidebarMobile();
+  });
 
   // 表示のしかた切替（一気に / 徐々に）
   const speedBtn = $('#btnSpeed');
