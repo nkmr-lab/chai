@@ -269,6 +269,10 @@ a{color:var(--accent)}
 .msg-attach .msg-img{max-width:180px;margin:0}
 .file-chip{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px}
 .gen-wait{color:var(--fg-2);font-size:14px}
+.resume-row{display:flex;align-items:center;gap:12px;justify-content:center;padding:14px 0;flex-wrap:wrap}
+.resume-note{color:var(--fg-2);font-size:13px}
+.resume-btn{background:var(--accent);color:var(--accent-fg);border:none;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer}
+.resume-btn:hover{opacity:.92}
 
 /* ── モーダル ── */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;

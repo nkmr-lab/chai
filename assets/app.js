@@ -323,6 +323,16 @@
       const b = el('button', 'ctrl-btn regen-btn'); b.textContent = '🔄 やり直す'; b.onclick = regenerate;
       controlsOf(body).appendChild(b);
     }
+    // 回答が無いまま終わった発話（中断/エラー等）向け：ワンタップで生成する
+    function addResume() {
+      inner().querySelectorAll('.resume-row').forEach((n) => n.remove());
+      if (P.perm === 'read') return;
+      const row = el('div', 'resume-row');
+      const note = el('span', 'resume-note'); note.textContent = 'この発話への回答がありません';
+      const b = el('button', 'resume-btn'); b.textContent = '▶ 回答を生成';
+      b.onclick = () => { row.remove(); regenerate(); };
+      row.append(note, b); inner().appendChild(row);
+    }
     function addStockBtn(body) {
       if (!body || body.querySelector('.stock-btn')) return;
       const b = el('button', 'ctrl-btn stock-btn'); b.textContent = '⭐ ストック';
@@ -506,7 +516,9 @@
         }
         root.dataset.cid = P.convId || '';
         inner().querySelectorAll('.msg.assistant .body').forEach((b) => { bindCopy(b); addCopyBtn(b); addStockBtn(b); });
-        const last = inner().querySelector('.msg:last-child'); if (last && last.classList.contains('assistant')) addRegen(last.querySelector('.body'));
+        const last = inner().querySelector('.msg:last-child');
+        if (last && last.classList.contains('assistant')) addRegen(last.querySelector('.body'));
+        else if (last && last.classList.contains('user') && !liveStreams[P.convId]) addResume();   // 回答が無い＝中断等 → 生成ボタン
         if (!messages.length) showEmpty();
         // まだ生成中のストリームがあれば、末尾に受け皿を作って接続（別チャットから戻った時のライブ反映）
         const live = liveStreams[P.convId];
