@@ -13,7 +13,7 @@ $logout = nkmrauth_logout_url();
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>chai — 中村研 AI チャット</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8D%B5%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="/assets/styles.css?v=37">
+<link rel="stylesheet" href="/assets/styles.css?v=38">
 <link rel="stylesheet" href="/assets/katex/katex.min.css">
 <!-- PWA（ホーム追加でアプリ化） -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -112,6 +112,6 @@ window.CHAI = {
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <script src="/assets/katex/katex.min.js"></script>
-<script src="/assets/app.js?v=41"></script>
+<script src="/assets/app.js?v=42"></script>
 </body>
 </html>

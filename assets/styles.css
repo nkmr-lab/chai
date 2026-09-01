@@ -235,6 +235,10 @@ a{color:var(--accent)}
   border-radius:999px;padding:4px 10px;font-size:12px;color:var(--fg)}
 .chip-x{cursor:pointer;color:var(--fg-2);font-size:15px;line-height:1}
 .chip-x:hover{color:var(--danger)}
+.chip.reading{border-style:dashed;opacity:.85}
+.chip.reading .chip-prog{color:var(--accent)}
+.chip.error{border-color:var(--danger);color:var(--danger)}
+.chip .chip-prog{font-size:11px;color:var(--fg-2)}
 .msg-img{max-width:min(100%,420px);border-radius:10px;border:1px solid var(--border);margin:.4em 0;display:block;cursor:zoom-in}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
 .lb-bar{position:absolute;top:12px;right:16px;display:flex;gap:14px;align-items:center}

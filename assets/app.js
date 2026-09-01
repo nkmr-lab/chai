@@ -351,7 +351,18 @@
             const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
             const line = frame.split('\n').find((l) => l.startsWith('data:')); if (!line) continue;
             const ev = JSON.parse(line.slice(5).trim());
-            if (ev.type === 'meta') { P.convId = ev.conversation_id; root.dataset.cid = P.convId || ''; applyPerm(); if (P.convId) liveStreams[P.convId] = { streamer: stream, ac }; if (userMsgEl && ev.user_msg_id) addDelete(userMsgEl, ev.user_msg_id); }
+            if (ev.type === 'meta') {
+              P.convId = ev.conversation_id; root.dataset.cid = P.convId || ''; applyPerm();
+              if (P.convId) {
+                liveStreams[P.convId] = { streamer: stream, ac };
+                // 新規会話は「できた瞬間」に一覧へ出す（生成完了を待たない）＝移動しても戻れる・ピン/リロードで消えない
+                if (!S.convs.some((c) => c.id === P.convId)) {
+                  if (S.cur === 0) { S.cur = P.convId; try { history.replaceState(null, '', '#c=' + P.convId); } catch (e) {} }
+                  saveOpen(); loadConvs();
+                }
+              }
+              if (userMsgEl && ev.user_msg_id) addDelete(userMsgEl, ev.user_msg_id);
+            }
             else if (ev.type === 'delta') { stream.push(ev.text); }
             else if (ev.type === 'image') { stream.image(ev.markdown); }
           else if (ev.type === 'code') { stream.image(ev.markdown); }
@@ -374,11 +385,13 @@
     }
     async function doSend() {
       if (P.streaming) { if (P.abort) P.abort.abort(); return; }
+      // 添付ファイルの読み込みが終わるまで送信しない（未完で送ると本文が届かない）
+      if (P.attachments.some((a) => a.reading)) { toast('📎 ファイルを読み込み中です。完了後に送信してください'); return; }
       const text = ta.value.trim();
       if (!text && !P.attachments.length) return;
       if (S.tier.tier === 'free' && S.tier.message_cap > 0 && S.tier.remaining_window <= 0) { openPlan(`おためしは${S.tier.window_hours}時間あたり${S.tier.message_cap}通までです。メンバーになると無制限で使えます。`); return; }
       stick = true;   // 送信直後は下端に追従
-      const atts = P.attachments.slice();
+      const atts = P.attachments.filter((a) => a.dataUrl && !a.error);   // 読み込み済みのみ
       const images = atts.filter((a) => a.kind === 'image').map((a) => a.dataUrl);
       const pdfs = atts.filter((a) => a.kind === 'pdf').map((a) => ({ name: a.name, data: a.dataUrl }));
       const datafiles = atts.filter((a) => a.kind === 'data').map((a) => ({ name: a.name, data: a.dataUrl }));
@@ -405,7 +418,13 @@
     // 添付
     function renderChips() {
       chips.innerHTML = '';
-      P.attachments.forEach((a, i) => { const c = el('span', 'chip'); c.innerHTML = (a.kind === 'image' ? '🖼 ' : a.kind === 'data' ? '📊 ' : '📄 ') + esc(a.name); const x = el('span', 'chip-x'); x.textContent = '×'; x.onclick = () => { P.attachments.splice(i, 1); renderChips(); }; c.appendChild(x); chips.appendChild(c); });
+      P.attachments.forEach((a, i) => {
+        const c = el('span', 'chip' + (a.reading ? ' reading' : '') + (a.error ? ' error' : ''));
+        const icon = a.reading ? '⏳ ' : (a.error ? '⚠ ' : (a.kind === 'image' ? '🖼 ' : a.kind === 'data' ? '📊 ' : '📄 '));
+        c.innerHTML = icon + esc(a.name) + (a.reading ? ' <span class="chip-prog">読み込み中…</span>' : (a.error ? ' <span class="chip-prog">失敗</span>' : ''));
+        const x = el('span', 'chip-x'); x.textContent = '×'; x.onclick = () => { P.attachments.splice(i, 1); renderChips(); };
+        c.appendChild(x); chips.appendChild(c);
+      });
     }
     // 画像は長辺2048pxに縮小してJPEG化（巨大写真でも軽く・確実に送れる）。デコード不可(HEIC等)は原本のまま
     async function imageToDataUrl(f) {
@@ -420,21 +439,26 @@
       } catch (e) { return raw; }
     }
     async function onFiles(files) {
-      let added = 0, skipped = 0;
+      const jobs = [];
       for (const f of files) {
         const ext = (f.name.split('.').pop() || '').toLowerCase();
         const isPdf = f.type === 'application/pdf' || ext === 'pdf';
         const isData = /^(csv|xlsx|xls)$/.test(ext) || f.type === 'text/csv' || /spreadsheet|excel/i.test(f.type);
         // 画像は type だけでなく拡張子でも判定（iPhoneのHEIC等で type が空/非標準でも拾う）
         const isImg = f.type.startsWith('image/') || /^(png|jpe?g|gif|webp|heic|heif|bmp|tiff?|avif)$/.test(ext);
-        if (!isPdf && !isImg && !isData) { skipped++; continue; }
+        if (!isPdf && !isImg && !isData) { toast('「' + f.name + '」は対応していない形式です'); continue; }
         const kind = isData ? 'data' : (isPdf ? 'pdf' : 'image');
-        try { P.attachments.push({ kind, name: f.name, dataUrl: kind === 'image' ? await imageToDataUrl(f) : await readFile(f) }); added++; }
-        catch (e) { skipped++; }
+        const att = { kind, name: f.name, dataUrl: '', reading: true };   // まず「読み込み中」で表示
+        P.attachments.push(att);
+        jobs.push((async () => {
+          try { att.dataUrl = kind === 'image' ? await imageToDataUrl(f) : await readFile(f); att.reading = false; }
+          catch (e) { att.reading = false; att.error = true; }
+          renderChips();
+        })());
       }
       renderChips();
-      if (added) toast(added + '件を添付しました');
-      if (skipped) toast(skipped + '件は対応していない形式でした');
+      await Promise.all(jobs);
+      renderChips();
     }
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
     ta.addEventListener('input', grow);
@@ -578,8 +602,14 @@
   // 📌＝明示ピンのオン/オフ（横に並べる集合の増減）
   function togglePin(id) {
     if (!id) return;
-    if (S.pins.includes(id)) { S.pins = S.pins.filter((x) => x !== id); }
-    else { if (S.pins.length >= 5) { alert('横に並べられるピンは最大5件です。'); return; } S.pins.push(id); }
+    if (S.pins.includes(id)) {
+      S.pins = S.pins.filter((x) => x !== id);
+      if (S.cur === id) S.cur = S.pins.length ? S.pins[S.pins.length - 1] : 0;
+    } else {
+      if (S.pins.length >= 5) { alert('横に並べられるピンは最大5件です。'); return; }
+      S.pins.push(id);
+      S.cur = id;   // ピンしたチャットを表示（空の新規ペインが横に出ないように）
+    }
     syncActive(S.cur); saveOpen(); renderConvList(); renderPanes(); closeSidebarMobile();
   }
   function newConv() {

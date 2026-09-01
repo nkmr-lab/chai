@@ -92,20 +92,25 @@ if ($images && $visionOK) {
 $docFileIds = [];
 $docFileNames = [];
 $docHashes = [];
+$pdfFailed = 0;
 if ($pdfs && $allowFiles) {
+    sse(['type' => 'status', 'text' => '📄 PDFを読み込んでいます…']);
     $maxPdf = (int)($U['max_pdf_mb'] ?? 15) * 1024 * 1024;
     foreach (array_slice($pdfs, 0, 4) as $pf) {
         $name = basename((string)($pf['name'] ?? 'document.pdf'));
         $raw  = (string)($pf['data'] ?? '');
         if (($pp = strpos($raw, 'base64,')) !== false) $raw = substr($raw, $pp + 7);
         $bin = base64_decode($raw, true);
-        if ($bin === false || $bin === '' || strlen($bin) > $maxPdf) continue;
+        if ($bin === false || $bin === '' || strlen($bin) > $maxPdf) { $pdfFailed++; continue; }
         $tmp = tempnam(sys_get_temp_dir(), 'chaipdf_') . '.pdf';
         file_put_contents($tmp, $bin);
         $up = openai_upload_dedup($tmp, $name, 'application/pdf');   // 同一内容は再利用
         @unlink($tmp);
         if ($up) { $docFileIds[] = $up['file_id']; $docFileNames[] = $name; $docHashes[] = $up['hash']; }
+        else { $pdfFailed++; }
     }
+    // 全部失敗＝本文が届かないので、モデルに丸投げせず明確に知らせて終了
+    if (!$docFileIds && $pdfFailed) sse_error('PDFの読み込みに失敗しました（サイズが大きすぎるか、破損している可能性があります）。もう一度アップロードしてください。');
 }
 if (($images || $docFileIds) && !$filesUnlimited) usage_event($email, 'file');  // お試し枠を1消費
 
