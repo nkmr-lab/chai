@@ -74,7 +74,7 @@ return [
     // ── アップロード制限 ─────────────────────────────────────
     'upload' => [
         'max_image_mb'   => 20,     // スマホ写真は大きめなので余裕を持たせる
-        'max_pdf_mb'     => 15,
+        'max_pdf_mb'     => 32,     // OpenAI input_file のPDF読取上限に合わせる（論文PDFは大きめ）
         'max_data_mb'    => 80,      // CSV/xlsx の上限（大きめ）
         'pdf_text_chars' => 40000,   // PDFから抽出するテキストの上限
     ],
