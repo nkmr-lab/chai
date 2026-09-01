@@ -303,6 +303,39 @@ switch ($action) {
         json_out(['ok' => true]);
     }
 
+    // TODO（未完のみ）一覧＝[{id, due, done}]
+    case 'todos': {
+        $st = db()->prepare("SELECT conversation_id, due, done FROM todos WHERE email = ? AND done = 0");
+        $st->execute([$email]);
+        json_out(['todos' => array_map(fn($r) => ['id' => (int)$r['conversation_id'], 'due' => $r['due'], 'done' => (int)$r['done']], $st->fetchAll())]);
+    }
+
+    // TODO 追加/更新（due・done を渡された分だけ更新。アクセス可の会話のみ）
+    case 'todo_set': {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'method'], 405);
+        $b = read_json_body();
+        $id = (int)($b['conversation_id'] ?? 0);
+        if (!conv_access($id, $me)) json_out(['error' => 'forbidden'], 403);
+        db()->prepare("INSERT IGNORE INTO todos (email, conversation_id) VALUES (?, ?)")->execute([$email, $id]);
+        if (array_key_exists('due', $b)) {
+            $due = trim((string)($b['due'] ?? ''));
+            $due = preg_match('/^\d{4}-\d{2}-\d{2}$/', $due) ? $due : null;   // 妥当な日付のみ、他はクリア
+            db()->prepare("UPDATE todos SET due = ? WHERE email = ? AND conversation_id = ?")->execute([$due, $email, $id]);
+        }
+        if (array_key_exists('done', $b)) {
+            db()->prepare("UPDATE todos SET done = ? WHERE email = ? AND conversation_id = ?")->execute([(int)!!$b['done'], $email, $id]);
+        }
+        json_out(['ok' => true]);
+    }
+
+    // TODO 削除
+    case 'todo_remove': {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_out(['error' => 'method'], 405);
+        $b = read_json_body();
+        db()->prepare("DELETE FROM todos WHERE email = ? AND conversation_id = ?")->execute([$email, (int)($b['conversation_id'] ?? 0)]);
+        json_out(['ok' => true]);
+    }
+
     // ピンセット一覧
     case 'pinsets': {
         $st = db()->prepare("SELECT id, name, chat_ids FROM pin_sets WHERE email = ? ORDER BY sort_order ASC, id ASC");

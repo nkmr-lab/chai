@@ -130,6 +130,17 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   KEY idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- TODO（チャットごとの〆切＋完了チェック。ブックマークとは別の「やること」リスト） -----
+CREATE TABLE IF NOT EXISTS todos (
+  email           VARCHAR(255)    NOT NULL,
+  conversation_id BIGINT UNSIGNED NOT NULL,
+  due             DATE            NULL,          -- 〆切（任意）
+  done            TINYINT         NOT NULL DEFAULT 0,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (email, conversation_id),
+  KEY idx_email_done (email, done)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 会話に紐づくデータ分析ファイル（OpenAI file_id を保持し毎ターン再マウント） ---
 CREATE TABLE IF NOT EXISTS conv_files (
   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

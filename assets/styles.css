@@ -61,6 +61,25 @@ a{color:var(--accent)}
 .pinset-item .ps-edit{opacity:0;color:var(--fg-2);font-size:13px;padding:0 4px;border-radius:6px}
 .pinset-item:hover .ps-edit{opacity:.6}
 .pinset-item .ps-edit:hover{opacity:1;background:var(--border)}
+/* TODO（〆切付き） */
+.todos{padding:2px 8px 0;border-bottom:1px solid var(--border)}
+.todos:empty{display:none}
+.todo-head{font-size:11px;font-weight:700;color:var(--fg-2);padding:8px 6px 4px}
+.todo-item{display:flex;align-items:flex-start;gap:6px;padding:5px 6px;border-radius:8px}
+.todo-item:hover{background:var(--bg-2)}
+.todo-ck{background:none;border:none;cursor:pointer;font-size:16px;line-height:1.2;color:var(--fg-2);padding:0}
+.todo-ck:hover{color:var(--accent)}
+.todo-body{flex:1;min-width:0}
+.todo-name{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.todo-due-row{display:flex;align-items:center;gap:4px;margin-top:2px}
+.todo-due{font-size:11px;color:var(--fg-2);cursor:pointer;border:1px solid transparent;border-radius:5px;padding:0 2px}
+.todo-due:hover{border-color:var(--border)}
+.todo-due.soon{color:#b8860b;font-weight:600}
+.todo-due.over{color:var(--danger,#c0392b);font-weight:700}
+.todo-date{font-size:11px;color:var(--fg-2);background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:1px 4px;max-width:130px}
+.todo-x{opacity:0;color:var(--fg-2);font-size:14px;padding:0 3px;border-radius:6px;cursor:pointer}
+.todo-item:hover .todo-x{opacity:.6}
+.todo-x:hover{opacity:1;background:var(--border)}
 /* ブックマーク（あとで見る） */
 .bookmarks{padding:2px 8px 0}
 .bm-head{font-size:11px;font-weight:700;color:var(--fg-2);padding:8px 6px 4px}
@@ -308,6 +327,10 @@ a{color:var(--accent)}
 .conv-item:hover .bm{opacity:.6}
 .conv-item .bm.on{opacity:1;filter:none}
 .conv-item .bm:hover{opacity:1;background:var(--border)}
+.conv-item .td{opacity:0;font-size:12px;line-height:1;padding:2px 3px;border-radius:6px;filter:grayscale(1)}
+.conv-item:hover .td{opacity:.6}
+.conv-item .td.on{opacity:1;filter:none}
+.conv-item .td:hover{opacity:1;background:var(--border)}
 .tier-note{font-size:11px;color:var(--fg-2)}
 .btn-feedback{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--fg-2);font-size:12px;text-align:left}
 .btn-feedback:hover{background:var(--bg-2);color:var(--fg)}
@@ -346,7 +369,7 @@ a{color:var(--accent)}
 }
 /* タッチ端末：ホバーで出る要素を常時表示（1タップで反応させる＝ダブルタップ不要） */
 @media (hover:none){
-  .conv-item .pin,.conv-item .x,.conv-item .edit,.conv-item .bm{opacity:.55}
+  .conv-item .pin,.conv-item .x,.conv-item .edit,.conv-item .bm,.conv-item .td{opacity:.55}
   .pinset-item .ps-x{opacity:.55}
   .pinset-item .ps-edit{opacity:.5}
   .msg .body pre .copy{opacity:.7}

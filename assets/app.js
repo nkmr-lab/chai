@@ -136,6 +136,7 @@
     activeTab: 0,    // アクティブなタブ(フォーカス/狭い画面の表示)
     pinsets: [],     // 保存済みピンセット
     bookmarks: [],   // 「あとで見る」会話id（横並び表示とは別の保存リスト）
+    todos: [],       // TODO [{id, due, done}]（〆切付き・未完のみ）
     instant: localStorage.getItem('chai_instant') === '1',   // true=一気に表示 / false=徐々に(タイプライター)
   };
   let panes = [];    // 現在のペイン群
@@ -565,6 +566,10 @@
     const it = el('div', 'conv-item' + (shown ? ' active' : ''));
     const t = el('span', 't'); t.textContent = (shared ? '👥 ' : '') + (c.title || '無題');
     t.title = shared ? ('共有元: ' + (c.owner_email || '') + '（' + (c.perm === 'write' ? '書き込み可' : '閲覧のみ') + '）') : (c.title || '無題');
+    const isTodo = !!todoOf(c.id);
+    const td = el('span', 'td' + (isTodo ? ' on' : '')); td.textContent = '🗓';
+    td.title = isTodo ? 'TODOから外す' : 'TODOに追加（〆切を設定）';
+    td.onclick = (e) => { e.stopPropagation(); toggleTodo(c.id); };
     const marked = S.bookmarks.includes(c.id);
     const bm = el('span', 'bm' + (marked ? ' on' : '')); bm.textContent = marked ? '🔖' : '🏷';
     bm.title = marked ? 'あとで見るから外す' : 'あとで見るに追加';
@@ -572,7 +577,7 @@
     const pin = el('span', 'pin' + (pinned ? ' on' : '')); pin.textContent = '📌';
     pin.title = pinned ? 'ピンを外す' : 'ピン留めして横に並べる';
     pin.onclick = (e) => { e.stopPropagation(); togglePin(c.id); };
-    it.append(t, bm, pin);
+    it.append(t, td, bm, pin);
     it.onclick = () => viewChat(c.id);   // 選択＝表示の切り替え（ピンは増やさない）
     return it;
   }
@@ -634,6 +639,7 @@
     if (S.cur && !ids.has(S.cur)) S.cur = S.pins.length ? S.pins[0] : 0;
     renderConvList();
     renderBookmarks();   // タイトル最新化・削除済みを除外
+    renderTodos();
     // ペインのタイトルを最新化（再描画はしない）
     panes.forEach((p) => { if (p.convId) p.setTitle(convTitle(p.convId)); });
     const pids = paneIds();
@@ -662,6 +668,71 @@
     renderBookmarks(); renderConvList();
     try { await post(on ? 'bookmark_remove' : 'bookmark_add', { conversation_id: id }); }
     catch (e) { loadBookmarks(); }
+  }
+  // ── TODO（〆切付き・完了チェック） ───────────────────────
+  const todoOf = (id) => S.todos.find((t) => t.id === id);
+  const fmtDue = (due) => {
+    if (!due) return { cls: '', short: '' };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const d = new Date(due + 'T00:00:00');
+    const days = Math.round((d - today) / 86400000);
+    if (days < 0) return { cls: 'over', short: (-days) + '日超過' };
+    if (days === 0) return { cls: 'soon', short: '今日' };
+    if (days === 1) return { cls: 'soon', short: '明日' };
+    if (days <= 3) return { cls: 'soon', short: 'あと' + days + '日' };
+    return { cls: '', short: 'あと' + days + '日' };
+  };
+  async function loadTodos() { try { const { todos } = await api('todos'); S.todos = todos || []; renderTodos(); } catch (e) {} }
+  function renderTodos() {
+    const box = $('#todos'); if (!box) return; box.innerHTML = '';
+    const items = S.todos.filter((t) => S.convs.some((c) => c.id === t.id));
+    if (!items.length) return;
+    items.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));   // 〆切が近い順、期日なしは末尾
+    const head = el('div', 'todo-head'); head.textContent = '✅ TODO'; box.appendChild(head);
+    for (const t of items) {
+      const it = el('div', 'todo-item');
+      const ck = el('button', 'todo-ck'); ck.textContent = '☐'; ck.title = '完了にする';
+      ck.onclick = (e) => { e.stopPropagation(); completeTodo(t.id); };
+      const body = el('div', 'todo-body');
+      const nm = el('div', 'todo-name'); nm.textContent = convTitle(t.id); nm.title = convTitle(t.id);
+      nm.onclick = () => viewChat(t.id);
+      const due = fmtDue(t.due);
+      const row = el('div', 'todo-due-row');
+      const dp = el('input', 'todo-date'); dp.type = 'date'; dp.value = t.due || ''; dp.title = '〆切を設定';
+      dp.onchange = () => setTodoDue(t.id, dp.value);
+      row.appendChild(dp);
+      if (t.due && due.short) {
+        const badge = el('span', 'todo-due ' + due.cls);
+        badge.textContent = due.short;
+        row.appendChild(badge);
+      }
+      body.append(nm, row);
+      const x = el('span', 'todo-x'); x.textContent = '×'; x.title = 'TODOから外す';
+      x.onclick = (e) => { e.stopPropagation(); removeTodo(t.id); };
+      it.append(ck, body, x); box.appendChild(it);
+    }
+  }
+  async function toggleTodo(id) {
+    if (!id) return;
+    if (todoOf(id)) { removeTodo(id); return; }
+    S.todos = [...S.todos, { id, due: null, done: 0 }];   // 即時反映
+    renderTodos(); renderConvList();
+    try { await post('todo_set', { conversation_id: id }); } catch (e) { loadTodos(); }
+  }
+  async function setTodoDue(id, due) {
+    const t = todoOf(id); if (t) t.due = due || null;
+    renderTodos();
+    try { await post('todo_set', { conversation_id: id, due: due || '' }); } catch (e) { loadTodos(); }
+  }
+  async function completeTodo(id) {
+    S.todos = S.todos.filter((t) => t.id !== id);   // 完了＝一覧から消える
+    renderTodos(); renderConvList(); toast('完了にしました');
+    try { await post('todo_set', { conversation_id: id, done: 1 }); } catch (e) { loadTodos(); }
+  }
+  async function removeTodo(id) {
+    S.todos = S.todos.filter((t) => t.id !== id);
+    renderTodos(); renderConvList();
+    try { await post('todo_remove', { conversation_id: id }); } catch (e) { loadTodos(); }
   }
   // ── ピンセット（名前付きのピン集合） ─────────────────────
   async function loadPinsets() { try { const { pinsets } = await api('pinsets'); S.pinsets = pinsets || []; renderPinsets(); } catch (e) {} }
@@ -1024,6 +1095,7 @@
     renderPanes();
     loadPinsets();
     loadBookmarks();
+    loadTodos();
     app.setAttribute('aria-busy', 'false');
   })();
 })();
