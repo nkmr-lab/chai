@@ -104,10 +104,19 @@ if ($pdfs && $allowFiles) {
         if ($bin === false || $bin === '' || strlen($bin) > $maxPdf) { $pdfFailed++; continue; }
         $tmp = tempnam(sys_get_temp_dir(), 'chaipdf_') . '.pdf';
         file_put_contents($tmp, $bin);
-        $up = openai_upload_dedup($tmp, $name, 'application/pdf');   // 同一内容は再利用
+        // OpenAIの読取上限(約32MB/100ページ)を超える大きいPDFはページ範囲で分割
+        $parts = pdf_split_parts($tmp);
+        $np = count($parts);
+        if ($np > 1) sse(['type' => 'status', 'text' => "📄 大きいPDFを{$np}分割して読み込んでいます…"]);
+        $okThis = 0;
+        foreach ($parts as $pi => $ppath) {
+            $pname = $np > 1 ? ($name . ' (' . ($pi + 1) . '/' . $np . ')') : $name;
+            $up = openai_upload_dedup($ppath, $pname, 'application/pdf');   // 同一内容は再利用
+            if ($ppath !== $tmp) @unlink($ppath);
+            if ($up) { $docFileIds[] = $up['file_id']; $docFileNames[] = $pname; $docHashes[] = $up['hash']; $okThis++; }
+        }
         @unlink($tmp);
-        if ($up) { $docFileIds[] = $up['file_id']; $docFileNames[] = $name; $docHashes[] = $up['hash']; }
-        else { $pdfFailed++; }
+        if (!$okThis) $pdfFailed++;
     }
     // 全部失敗＝本文が届かないので、モデルに丸投げせず明確に知らせて終了
     if (!$docFileIds && $pdfFailed) sse_error('PDFの読み込みに失敗しました（サイズが大きすぎるか、破損している可能性があります）。もう一度アップロードしてください。');
