@@ -136,7 +136,8 @@
     activeTab: 0,    // アクティブなタブ(フォーカス/狭い画面の表示)
     pinsets: [],     // 保存済みピンセット
     bookmarks: [],   // 「あとで見る」会話id（横並び表示とは別の保存リスト）
-    todos: [],       // TODO [{id, due, done}]（〆切付き・未完のみ）
+    todos: [],       // 未完TODO [{id, due}]（〆切付き）
+    todosDone: [],   // 完了TODO [{id, due}]
     instant: localStorage.getItem('chai_instant') === '1',   // true=一気に表示 / false=徐々に(タイプライター)
   };
   let panes = [];    // 現在のペイン群
@@ -694,13 +695,14 @@
     if (days <= 3) return { cls: 'soon', short: 'あと' + days + '日' };
     return { cls: '', short: 'あと' + days + '日' };
   };
-  async function loadTodos() { try { const { todos } = await api('todos'); S.todos = todos || []; renderTodos(); } catch (e) {} }
+  async function loadTodos() { try { const r = await api('todos'); S.todos = r.todos || []; S.todosDone = r.done || []; renderTodos(); } catch (e) {} }
   function renderTodos() {
     const box = $('#todos'); if (!box) return; box.innerHTML = '';
     const items = S.todos.filter((t) => S.convs.some((c) => c.id === t.id));
-    if (!items.length) return;
+    const doneItems = S.todosDone.filter((t) => S.convs.some((c) => c.id === t.id));
+    if (!items.length && !doneItems.length) return;
     items.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));   // 〆切が近い順、期日なしは末尾
-    const head = el('div', 'todo-head'); head.textContent = '✅ TODO'; box.appendChild(head);
+    if (items.length) { const head = el('div', 'todo-head'); head.textContent = '✅ TODO'; box.appendChild(head); }
     for (const t of items) {
       const it = el('div', 'todo-item');
       const ck = el('button', 'todo-ck'); ck.textContent = '☐'; ck.title = '完了にする';
@@ -723,6 +725,25 @@
       x.onclick = (e) => { e.stopPropagation(); removeTodo(t.id); };
       it.append(ck, body, x); box.appendChild(it);
     }
+    // 完了済み（折りたたみ）
+    if (doneItems.length) {
+      const open = localStorage.getItem('chai_todo_done_open') === '1';
+      const tg = el('div', 'todo-done-toggle'); tg.textContent = (open ? '▾' : '▸') + ' ✔ 完了済み（' + doneItems.length + '）';
+      tg.onclick = () => { localStorage.setItem('chai_todo_done_open', open ? '0' : '1'); renderTodos(); };
+      box.appendChild(tg);
+      if (open) {
+        for (const t of doneItems) {
+          const it = el('div', 'todo-item done');
+          const un = el('button', 'todo-ck'); un.textContent = '☑'; un.title = '未完に戻す';
+          un.onclick = (e) => { e.stopPropagation(); uncompleteTodo(t.id); };
+          const nm = el('div', 'todo-name done'); nm.textContent = convTitle(t.id); nm.title = convTitle(t.id);
+          nm.onclick = () => viewChat(t.id);
+          const x = el('span', 'todo-x'); x.textContent = '×'; x.title = 'TODOから削除';
+          x.onclick = (e) => { e.stopPropagation(); removeTodo(t.id); };
+          it.append(un, nm, x); box.appendChild(it);
+        }
+      }
+    }
   }
   async function toggleTodo(id) {
     if (!id) return;
@@ -737,12 +758,20 @@
     try { await post('todo_set', { conversation_id: id, due: due || '' }); } catch (e) { loadTodos(); }
   }
   async function completeTodo(id) {
-    S.todos = S.todos.filter((t) => t.id !== id);   // 完了＝一覧から消える
+    const t = todoOf(id); S.todos = S.todos.filter((x) => x.id !== id);   // 未完→完了へ移す
+    if (t) S.todosDone = [{ id, due: t.due }, ...S.todosDone];
     renderTodos(); renderConvList(); toast('完了にしました');
     try { await post('todo_set', { conversation_id: id, done: 1 }); } catch (e) { loadTodos(); }
   }
+  async function uncompleteTodo(id) {
+    const t = S.todosDone.find((x) => x.id === id); S.todosDone = S.todosDone.filter((x) => x.id !== id);
+    S.todos = [...S.todos, { id, due: t ? t.due : null }];   // 完了→未完へ戻す
+    renderTodos(); renderConvList();
+    try { await post('todo_set', { conversation_id: id, done: 0 }); } catch (e) { loadTodos(); }
+  }
   async function removeTodo(id) {
     S.todos = S.todos.filter((t) => t.id !== id);
+    S.todosDone = S.todosDone.filter((t) => t.id !== id);
     renderTodos(); renderConvList();
     try { await post('todo_remove', { conversation_id: id }); } catch (e) { loadTodos(); }
   }

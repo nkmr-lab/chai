@@ -303,11 +303,16 @@ switch ($action) {
         json_out(['ok' => true]);
     }
 
-    // TODO（未完のみ）一覧＝[{id, due, done}]
+    // TODO 一覧（未完 todos ＋ 完了 done）＝各 [{id, due}]
     case 'todos': {
-        $st = db()->prepare("SELECT conversation_id, due, done FROM todos WHERE email = ? AND done = 0");
+        $st = db()->prepare("SELECT conversation_id, due, done FROM todos WHERE email = ? ORDER BY (due IS NULL), due ASC, created_at DESC");
         $st->execute([$email]);
-        json_out(['todos' => array_map(fn($r) => ['id' => (int)$r['conversation_id'], 'due' => $r['due'], 'done' => (int)$r['done']], $st->fetchAll())]);
+        $active = []; $done = [];
+        foreach ($st->fetchAll() as $r) {
+            $row = ['id' => (int)$r['conversation_id'], 'due' => $r['due']];
+            if ((int)$r['done']) $done[] = $row; else $active[] = $row;
+        }
+        json_out(['todos' => $active, 'done' => $done]);
     }
 
     // TODO 追加/更新（due・done を渡された分だけ更新。アクセス可の会話のみ）

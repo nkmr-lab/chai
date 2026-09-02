@@ -80,6 +80,10 @@ a{color:var(--accent)}
 .todo-x{opacity:0;color:var(--fg-2);font-size:14px;padding:0 3px;border-radius:6px;cursor:pointer}
 .todo-item:hover .todo-x{opacity:.6}
 .todo-x:hover{opacity:1;background:var(--border)}
+.todo-done-toggle{font-size:11px;color:var(--fg-2);padding:6px 6px 4px;cursor:pointer;user-select:none}
+.todo-done-toggle:hover{color:var(--fg)}
+.todo-item.done .todo-name.done{color:var(--fg-2);text-decoration:line-through}
+.todo-item.done .todo-ck{color:var(--accent)}
 /* ブックマーク（あとで見る） */
 .bookmarks{padding:2px 8px 0}
 .bm-head{font-size:11px;font-weight:700;color:var(--fg-2);padding:8px 6px 4px}
