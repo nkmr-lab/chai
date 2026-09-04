@@ -1112,6 +1112,41 @@
     if (app.classList.contains('side-open') && !e.target.closest('#sidebar') && !e.target.closest('#btnMenu')) closeSidebarMobile();
   });
 
+  // スマホ: 左端から右スワイプで開く / 左スワイプで閉じる（指に追従、Claude風）
+  (function edgeSwipe() {
+    const sb = $('#sidebar'); if (!sb) return;
+    let x0 = 0, y0 = 0, w = 264, drag = false, openStart = false, decided = false;
+    const isMobile = () => window.matchMedia('(max-width:760px)').matches;
+    document.addEventListener('touchstart', (e) => {
+      if (!isMobile() || e.touches.length !== 1) { drag = false; return; }
+      const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY;
+      openStart = app.classList.contains('side-open');
+      drag = openStart ? true : (x0 <= 24);   // 閉時は左端24px以内から / 開時はどこでも
+      decided = false;
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (!drag) return;
+      const t = e.touches[0]; const dx = t.clientX - x0, dy = t.clientY - y0;
+      if (!decided) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (Math.abs(dy) > Math.abs(dx)) { drag = false; return; }   // 縦方向は無視（スクロール優先）
+        decided = true; w = sb.offsetWidth || 264;
+      }
+      e.preventDefault();
+      let tx = openStart ? Math.min(0, dx) : Math.min(0, -w + Math.max(0, dx));
+      tx = Math.max(-w, Math.min(0, tx));
+      sb.style.transition = 'none'; sb.style.transform = 'translateX(' + tx + 'px)';
+    }, { passive: false });
+    document.addEventListener('touchend', () => {
+      if (!drag) return; drag = false;
+      if (!decided) return;   // ドラッグしていない（タップ）なら何もしない
+      let tx = -w;
+      try { tx = new DOMMatrix(getComputedStyle(sb).transform).m41; } catch (e) {}
+      sb.style.transition = ''; sb.style.transform = '';
+      app.classList.toggle('side-open', tx > -w * 0.5);   // 半分以上出ていれば開く
+    }, { passive: true });
+  })();
+
   // 表示のしかた切替（一気に / 徐々に）
   const speedBtn = $('#btnSpeed');
   const renderSpeedBtn = () => { if (speedBtn) { speedBtn.textContent = S.instant ? '⚡ 一気に' : '✍️ 徐々に'; speedBtn.title = S.instant ? '今: 一気に表示（押すと徐々に）' : '今: 徐々に表示（押すと一気に）'; } };
