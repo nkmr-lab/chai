@@ -135,6 +135,12 @@ a{color:var(--accent)}
 /* ── メイン ── */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+/* iOS等のセーフエリア: 最上部がステータスバー/ノッチ裏に潜ってタップ不能になるのを防ぐ */
+@supports (padding:env(safe-area-inset-top)){
+  .topbar{padding-top:calc(10px + env(safe-area-inset-top));padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right))}
+  .sidebar-head{padding-top:calc(12px + env(safe-area-inset-top))}
+  .pane-composer-wrap{padding-bottom:env(safe-area-inset-bottom)}
+}
 .hamburger{display:none;background:none;border:none;font-size:20px;color:var(--fg)}
 .topbar-title{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-plan{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--fg);font-weight:600}
