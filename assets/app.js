@@ -474,7 +474,11 @@
     }
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
     ta.addEventListener('input', grow);
-    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); if (!P.streaming) doSend(); } });   // 生成中のEnterでは止めない（停止は■ボタンのみ）
+    ta.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.keyCode === 229) return;
+      if (window.matchMedia('(max-width:760px)').matches) return;   // スマホはEnter=改行（送信は➤ボタンのみ）
+      e.preventDefault(); if (!P.streaming) doSend();               // PCはEnterで送信（生成中は止めない）
+    });
     sendBtn.onclick = doSend;
     attach.onclick = () => fileIn.click();
     attach.style.display = S.tier.can_attach ? '' : 'none';   // 非会員も1日お試し枠があれば表示
