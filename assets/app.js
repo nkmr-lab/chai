@@ -705,14 +705,15 @@
     if (items.length) { const head = el('div', 'todo-head'); head.textContent = '✅ TODO'; box.appendChild(head); }
     for (const t of items) {
       const it = el('div', 'todo-item');
+      it.onclick = () => viewChat(t.id);   // 行のどこをタップしても開く
       const ck = el('button', 'todo-ck'); ck.textContent = '☐'; ck.title = '完了にする';
       ck.onclick = (e) => { e.stopPropagation(); completeTodo(t.id); };
       const body = el('div', 'todo-body');
       const nm = el('div', 'todo-name'); nm.textContent = convTitle(t.id); nm.title = convTitle(t.id);
-      nm.onclick = () => viewChat(t.id);
       const due = fmtDue(t.due);
       const row = el('div', 'todo-due-row');
       const dp = el('input', 'todo-date'); dp.type = 'date'; dp.value = t.due || ''; dp.title = '〆切を設定';
+      dp.onclick = (e) => e.stopPropagation();   // 日付選択は開かない
       dp.onchange = () => setTodoDue(t.id, dp.value);
       row.appendChild(dp);
       if (t.due && due.short) {
@@ -734,10 +735,10 @@
       if (open) {
         for (const t of doneItems) {
           const it = el('div', 'todo-item done');
+          it.onclick = () => viewChat(t.id);
           const un = el('button', 'todo-ck'); un.textContent = '☑'; un.title = '未完に戻す';
           un.onclick = (e) => { e.stopPropagation(); uncompleteTodo(t.id); };
           const nm = el('div', 'todo-name done'); nm.textContent = convTitle(t.id); nm.title = convTitle(t.id);
-          nm.onclick = () => viewChat(t.id);
           const x = el('span', 'todo-x'); x.textContent = '×'; x.title = 'TODOから削除';
           x.onclick = (e) => { e.stopPropagation(); removeTodo(t.id); };
           it.append(un, nm, x); box.appendChild(it);
