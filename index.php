@@ -6,6 +6,7 @@ require_once __DIR__ . '/lib.php';
 $me = nkmrauth_require();            // ログイン必須（未ログインは auth.nkmr.io へ）
 $state = tier_state($me['email']);
 $logout = nkmrauth_logout_url();
+$ver = 47;                            // ★アプリ版。反映のたびに +1（cache-bust＆画面表示の単一の源）
 ?><!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -13,7 +14,7 @@ $logout = nkmrauth_logout_url();
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>chai — 中村研 AI チャット</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8D%B5%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="/assets/styles.css?v=42">
+<link rel="stylesheet" href="/assets/styles.css?v=<?= $ver ?>">
 <link rel="stylesheet" href="/assets/katex/katex.min.css">
 <!-- PWA（ホーム追加でアプリ化） -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -45,6 +46,7 @@ $logout = nkmrauth_logout_url();
       <button class="btn-feedback" id="btnFeedback">💬 要望・不具合を送る</button>
       <div class="user-row">
         <span class="user-name" id="userName"></span>
+        <span class="app-ver" id="appVer">v<?= $ver ?></span>
         <a class="logout" href="<?= htmlspecialchars($logout, ENT_QUOTES) ?>">ログアウト</a>
       </div>
     </div>
@@ -110,11 +112,12 @@ $logout = nkmrauth_logout_url();
 <script>
 window.CHAI = {
   user:  <?= json_encode(['email'=>$me['email'],'name'=>$me['name']??'','user'=>$me['user']??''], JSON_UNESCAPED_UNICODE) ?>,
-  tier:  <?= json_encode($state, JSON_UNESCAPED_UNICODE) ?>
+  tier:  <?= json_encode($state, JSON_UNESCAPED_UNICODE) ?>,
+  version: <?= $ver ?>
 };
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <script src="/assets/katex/katex.min.js"></script>
-<script src="/assets/app.js?v=46"></script>
+<script src="/assets/app.js?v=<?= $ver ?>"></script>
 </body>
 </html>
