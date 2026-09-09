@@ -55,13 +55,13 @@ return [
     // free ユーザには tier=free のものだけ表示。pro は全部。
     // 5.6 をベースに。非会員も 5.6 を使える（下げない）。o3 だけメンバー特典。
     'models' => [
-        'gpt-6-astra'  => ['label' => 'GPT-6 Astra（最新・高精度）', 'tier' => 'free', 'vision' => true],
+        'gpt-6-astra'  => ['label' => 'GPT-6 Astra（最新・高精度／メンバー限定）', 'tier' => 'pro', 'vision' => true],
         'gpt-5.6-sol'  => ['label' => 'GPT-5.6 Sol（高精度）',   'tier' => 'free', 'vision' => true],
         'gpt-5.6-terra'=> ['label' => 'GPT-5.6 Terra（バランス）', 'tier' => 'free', 'vision' => true],
         'gpt-5.6-luna' => ['label' => 'GPT-5.6 Luna（高速・安価）', 'tier' => 'free', 'vision' => true],
         'o3'           => ['label' => 'o3（じっくり推論）',       'tier' => 'pro',  'vision' => true],
     ],
-    'default_model' => ['pro' => 'gpt-6-astra', 'free' => 'gpt-5.6-luna'],
+    'default_model' => ['pro' => 'gpt-5.6-luna', 'free' => 'gpt-5.6-luna'],   // 既定は安価なLuna。Astra/Solは選択式(Astraは約50倍高い)
 
     // ── 画像生成 ───────────────────────────────────────────────
     // model が失敗（未認証403等）したら fallback を自動で試す。

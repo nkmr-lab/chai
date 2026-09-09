@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib.php';
 $me = nkmrauth_require();            // ログイン必須（未ログインは auth.nkmr.io へ）
 $state = tier_state($me['email']);
 $logout = nkmrauth_logout_url();
-$ver = 51;                            // ★アプリ版。反映のたびに +1（cache-bust＆画面表示の単一の源）
+$ver = 52;                            // ★アプリ版。反映のたびに +1（cache-bust＆画面表示の単一の源）
 ?><!DOCTYPE html>
 <html lang="ja">
 <head>
