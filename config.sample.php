@@ -55,20 +55,22 @@ return [
     // free ユーザには tier=free のものだけ表示。pro は全部。
     // 5.6 をベースに。非会員も 5.6 を使える（下げない）。o3 だけメンバー特典。
     'models' => [
+        'gpt-6-astra'  => ['label' => 'GPT-6 Astra（最新・高精度）', 'tier' => 'free', 'vision' => true],
         'gpt-5.6-sol'  => ['label' => 'GPT-5.6 Sol（高精度）',   'tier' => 'free', 'vision' => true],
         'gpt-5.6-terra'=> ['label' => 'GPT-5.6 Terra（バランス）', 'tier' => 'free', 'vision' => true],
         'gpt-5.6-luna' => ['label' => 'GPT-5.6 Luna（高速・安価）', 'tier' => 'free', 'vision' => true],
-        'gpt-5.5'      => ['label' => 'GPT-5.5',                'tier' => 'free', 'vision' => true],
         'o3'           => ['label' => 'o3（じっくり推論）',       'tier' => 'pro',  'vision' => true],
-        'gpt-4o'       => ['label' => 'GPT-4o（高速）',          'tier' => 'free', 'vision' => true],
     ],
-    'default_model' => ['pro' => 'gpt-5.6-luna', 'free' => 'gpt-5.6-luna'],
+    'default_model' => ['pro' => 'gpt-6-astra', 'free' => 'gpt-5.6-luna'],
 
-    // ── 画像生成（gpt-image-1） ────────────────────────────────
+    // ── 画像生成 ───────────────────────────────────────────────
+    // model が失敗（未認証403等）したら fallback を自動で試す。
+    // chatgpt-image-latest(=最新の「Image」系)は要・組織verification。認証すればそのまま最新に切替わる。
     'image_gen' => [
-        'model'   => 'gpt-image-2',   // 日本語テキスト描画が gpt-image-1 より大幅に正確
-        'size'    => '1024x1024',
-        'quality' => 'medium',        // low|medium|high（medium で日本語テキストも正確・high比2.5倍速）
+        'model'    => 'chatgpt-image-latest', // 最新。要OpenAI組織認証（未認証なら下のfallbackで動く）
+        'fallback' => 'gpt-image-1.5',        // 日本語◎かつ高速（~13秒）
+        'size'     => '1024x1024',
+        'quality'  => 'medium',               // gpt-image系にのみ適用（chatgpt-image系には送らない）
     ],
 
     // ── アップロード制限 ─────────────────────────────────────
