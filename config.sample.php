@@ -63,6 +63,15 @@ return [
     ],
     'default_model' => ['pro' => 'gpt-5.6-luna', 'free' => 'gpt-5.6-luna'],   // 既定は安価なLuna。Astra/Solは選択式(Astraは約50倍高い)
 
+    // ── プレミアムモデルの週次上限（会員でもAstraは使い過ぎ防止） ──
+    // 対象モデルを選ぶと消費。window_hours内にcap回まで、超過はfallbackへ自動で落とす。
+    'premium' => [
+        'models'       => ['gpt-6-astra'],
+        'cap'          => 30,        // 期間内の上限回数
+        'window_hours' => 168,       // 7日
+        'fallback'     => 'gpt-5.6-sol',
+    ],
+
     // ── 画像生成 ───────────────────────────────────────────────
     // model が失敗（未認証403等）したら fallback を自動で試す。
     // chatgpt-image-latest(=最新の「Image」系)は要・組織verification。認証すればそのまま最新に切替わる。
