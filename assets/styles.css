@@ -403,9 +403,7 @@ a{color:var(--accent)}
 /* ── 埋め込み (chat.nkmr.io の面として並べられた時) ──────────────
    サイドバーを畳んで本文だけにする。 新規チャットと別窓は上部のボタンで足す。 */
 body.embed .sidebar{display:none}
-body.embed #btnMenu{display:none}
-body.embed .topbar{padding-left:10px}
-body.embed .btn-plan{display:none}
-.embed-btn{flex:0 0 auto;background:none;border:1px solid var(--border);border-radius:6px;
-  padding:2px 8px;margin-left:6px;cursor:pointer;font-size:13px;color:var(--fg)}
-.embed-btn:hover{background:var(--bg-2)}
+/* 上部バーは親 (chat.nkmr.io の面のヘッダ) と二重になるので畳む。
+   「＋新しいチャット」は親のヘッダから postMessage で頼まれる。 */
+body.embed .topbar{display:none}
+body.embed .panes{padding-top:0}

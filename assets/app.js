@@ -1185,14 +1185,12 @@
     app.setAttribute('aria-busy', 'false');
 
     if (EMBED) {
-      // サイドバーが無いので、 新規チャットと別窓を上部に出す
-      const bar = $('.topbar');
-      const add = el('button', 'embed-btn'); add.textContent = '＋ 新しいチャット';
-      add.onclick = () => $('#btnNew').click();
-      const out = el('button', 'embed-btn'); out.textContent = '↗';
-      out.title = 'chai を別のタブで開く';
-      out.onclick = () => window.open('https://chai.nkmr.io/' + (S.cur ? '#c=' + S.cur : ''), '_blank', 'noopener');
-      bar.append(add, out);
+      // 上部バーは畳んである。 「＋新しいチャット」は親のヘッダから頼まれる。
+      window.addEventListener('message', (ev) => {
+        if (ev.origin !== 'https://chat.nkmr.io') return;
+        const d = ev.data || {};
+        if (d.type === 'chai:new') $('#btnNew').click();
+      });
       tellParent({ type: 'chai:conv', id: S.cur });
     }
 
