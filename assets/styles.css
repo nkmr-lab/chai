@@ -402,8 +402,13 @@ a{color:var(--accent)}
 
 /* ── 埋め込み (chat.nkmr.io の面として並べられた時) ──────────────
    サイドバーを畳んで本文だけにする。 新規チャットと別窓は上部のボタンで足す。 */
-body.embed .sidebar{display:none}
-/* 上部バーは親 (chat.nkmr.io の面のヘッダ) と二重になるので畳む。
-   「＋新しいチャット」は親のヘッダから postMessage で頼まれる。 */
+/* 幅が狭いので、 サイドバーは常に「重ねて出し入れ」にする (モバイルと同じ扱い)。
+   会話一覧・📌ピン・ピンセットはこの中にあるので、 消してはいけない。
+   出し入れは親 (chat.nkmr.io の面のヘッダの ☰) から postMessage で頼まれる。 */
+body.embed .sidebar{position:fixed;top:0;left:0;z-index:60;height:100%;
+  transform:translateX(-100%);box-shadow:var(--shadow);transition:transform .16s ease-out}
+body.embed .app.side-open .sidebar{transform:translateX(0)}
+body.embed .app.side-open::before{content:"";position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50}
+/* 上部バーは親の面のヘッダと二重になるので畳む。 ☰ / ＋ / 別窓 は親のヘッダにある。 */
 body.embed .topbar{display:none}
 body.embed .panes{padding-top:0}

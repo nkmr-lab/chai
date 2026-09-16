@@ -1189,7 +1189,9 @@
       window.addEventListener('message', (ev) => {
         if (ev.origin !== 'https://chat.nkmr.io') return;
         const d = ev.data || {};
-        if (d.type === 'chai:new') $('#btnNew').click();
+        if (d.type === 'chai:new')  $('#btnNew').click();
+        if (d.type === 'chai:menu') app.classList.toggle('side-open');   // 会話一覧 / ピンを出し入れ
+        if (d.type === 'chai:close-menu') app.classList.remove('side-open');
       });
       tellParent({ type: 'chai:conv', id: S.cur });
     }
