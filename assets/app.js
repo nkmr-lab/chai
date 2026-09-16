@@ -3,6 +3,10 @@
 (() => {
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
+  // chat.nkmr.io から iframe で並べられている時は embed=1 が付く。
+  // サイドバーを畳み、 開いている会話を親に知らせ、 ?q= があれば入力欄に入れておく。
+  const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+  const tellParent = (msg) => { if (EMBED) { try { parent.postMessage(msg, 'https://chat.nkmr.io'); } catch (e) {} } };
   const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // モデルが出すカール/全角クォートを ASCII に正規化（コードや貼り付けで壊れないように）
@@ -369,7 +373,7 @@
                 liveStreams[P.convId] = { streamer: stream, ac };
                 // 新規会話は「できた瞬間」に一覧へ出す（生成完了を待たない）＝移動しても戻れる・ピン/リロードで消えない
                 if (!S.convs.some((c) => c.id === P.convId)) {
-                  if (S.cur === 0) { S.cur = P.convId; try { history.replaceState(null, '', '#c=' + P.convId); } catch (e) {} }
+                  if (S.cur === 0) { S.cur = P.convId; try { history.replaceState(null, '', '#c=' + P.convId); } catch (e) {} tellParent({ type: 'chai:conv', id: P.convId }); }
                   saveOpen(); loadConvs();
                 }
               }
@@ -569,6 +573,7 @@
     setActive(S.activeTab);
     topbarTitle.textContent = '🍵 chai';   // 上部は固定（会話タイトルはペイン側に表示）
     if (panes[S.activeTab]) panes[S.activeTab].focus();
+    tellParent({ type: 'chai:conv', id: S.cur });   // 並べている親に「いまこの会話」と伝える
   }
   function setActive(i) {
     S.activeTab = i;
@@ -1178,5 +1183,29 @@
     loadBookmarks();
     loadTodos();
     app.setAttribute('aria-busy', 'false');
+
+    if (EMBED) {
+      // サイドバーが無いので、 新規チャットと別窓を上部に出す
+      const bar = $('.topbar');
+      const add = el('button', 'embed-btn'); add.textContent = '＋ 新しいチャット';
+      add.onclick = () => $('#btnNew').click();
+      const out = el('button', 'embed-btn'); out.textContent = '↗';
+      out.title = 'chai を別のタブで開く';
+      out.onclick = () => window.open('https://chai.nkmr.io/' + (S.cur ? '#c=' + S.cur : ''), '_blank', 'noopener');
+      bar.append(add, out);
+      tellParent({ type: 'chai:conv', id: S.cur });
+    }
+
+    // ?q=… が付いていたら入力欄に入れておく (送信まではしない。 本人が直してから送る)
+    const q = new URLSearchParams(location.search).get('q');
+    if (q) {
+      const ta = $('#panes textarea');
+      if (ta) {
+        ta.value = q;
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        ta.focus();
+        try { ta.setSelectionRange(0, 0); ta.scrollTop = 0; } catch (e) {}
+      }
+    }
   })();
 })();
