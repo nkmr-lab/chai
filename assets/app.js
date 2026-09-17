@@ -164,13 +164,24 @@
     const modelSel = el('select', 'pane-model'); modelSel.title = 'モデル';
     const pin = el('button', 'pane-pin'); pin.textContent = '📌'; pin.title = 'ピンを外す（閉じる）';
     head.append(title, edit, share, link, del, modelSel, pin);
+    if (EMBED) {
+      // 親 (chat.nkmr.io) の面と見た目を揃えるため、 ヘッダはここ 1 段だけにする。
+      // 親側の「🍵 chai」の段は隠してあるので、 そこにあった操作をここに持ってくる。
+      const mk = (txt, tip, fn) => { const b = el('button', 'embed-act'); b.textContent = txt; b.title = tip; b.onclick = fn; return b; };
+      head.append(
+        mk('☰', '会話一覧 / ピン', () => app.classList.toggle('side-open')),
+        mk('＋', '新しいチャット', () => $('#btnNew').click()),
+        mk('↗', '別のタブで開く', () => window.open('https://chai.nkmr.io/' + (P.convId ? '#c=' + P.convId : ''), '_blank', 'noopener')),
+        mk('✕', 'この面を閉じる', () => tellParent({ type: 'chai:close' })),
+      );
+    }
     const refDock = el('div', 'ref-dock'); refDock.hidden = true;   // 参照ドック（上部固定表示）
     const threadEl = el('div', 'pane-thread');
     const chips = el('div', 'pane-chips');
     const comp = el('div', 'pane-composer');
     const attach = el('button', 'comp-btn'); attach.textContent = '📎'; attach.title = '画像・PDFを添付';
     const ta = el('textarea'); ta.rows = 1; ta.placeholder = 'メッセージを入力（Shift+Enterで改行）';
-    const sendBtn = el('button', 'btn-send'); sendBtn.textContent = '➤'; sendBtn.title = '送信';
+    const sendBtn = el('button', 'btn-send'); sendBtn.textContent = EMBED ? '送信' : '➤'; sendBtn.title = '送信';
     const fileIn = el('input'); fileIn.type = 'file'; fileIn.accept = 'image/*,application/pdf,.csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; fileIn.multiple = true; fileIn.hidden = true;
     comp.append(attach, ta, sendBtn);
     const cwrap = el('div', 'pane-composer-wrap'); cwrap.append(chips, comp, fileIn);
@@ -268,6 +279,7 @@
       const nm = (role === 'user' && author) ? author : '';
       const av = el('div', 'avatar'); av.textContent = role === 'user' ? ((nm || S.user.name || 'あ')[0]) : '🍵';
       const body = el('div', 'body');
+      body.dataset.who = role === 'user' ? (nm || S.user.name || '') : 'chai';   // 埋め込み時に名前として出す
       if (role === 'assistant') { body.innerHTML = content ? md(content) : '<span class="cursor"></span>'; body._raw = content || ''; }
       else {
         if (nm && nm !== S.user.name) body.appendChild(Object.assign(el('div', 'author-name'), { textContent: nm }));
@@ -314,7 +326,7 @@
         get el() { return target; },
       };
     }
-    function setStreaming(on) { P.streaming = on; sendBtn.classList.toggle('stopping', on); sendBtn.textContent = on ? '■' : '➤'; sendBtn.title = on ? '停止' : '送信'; }
+    function setStreaming(on) { P.streaming = on; sendBtn.classList.toggle('stopping', on); sendBtn.textContent = on ? (EMBED ? '停止' : '■') : (EMBED ? '送信' : '➤'); sendBtn.title = on ? '停止' : '送信'; }
     function controlsOf(body) { let c = body.querySelector('.msg-controls'); if (!c) { c = el('div', 'msg-controls'); body.appendChild(c); } return c; }
     function addCopyBtn(body) {
       if (!body || body.querySelector('.copy-msg')) return;

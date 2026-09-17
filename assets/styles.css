@@ -412,3 +412,54 @@ body.embed .app.side-open::before{content:"";position:fixed;inset:0;background:r
 /* 上部バーは親の面のヘッダと二重になるので畳む。 ☰ / ＋ / 別窓 は親のヘッダにある。 */
 body.embed .topbar{display:none}
 body.embed .panes{padding-top:0}
+
+/* ── 埋め込み時の見た目を chat.nkmr.io に揃える ────────────────────
+   chat は Slack 風 (常に明るい / 紫の四角に名前 / 平らな入力欄 / 左寄せ) なので、
+   chai の ChatGPT 風 (ダーク自動 / 中央寄せ / 影付きカプセル) のままだと隣に並べた時に浮く。
+   値は chat の public/assets/styles.css と同じにしてある。 変える時は両方。 */
+html:has(body.embed){color-scheme:light}
+body.embed{
+  --bg:#ffffff; --bg-2:#f8f8f8; --bg-side:#ffffff; --fg:#1d1c1d; --fg-2:#616061;
+  --border:#e3e1e4; --accent:#007a5a; --accent-fg:#ffffff; --user-bubble:#f4ede4;
+  --code-bg:#f6f6f6; --danger:#e01e5a; --shadow:0 4px 16px rgba(0,0,0,.12);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  font-size:15px;line-height:1.46;background:#fff;color:#1d1c1d
+}
+body.embed a{color:#1264a3}
+
+/* ヘッダ: chat の .pane-head と同じ高さ・線 */
+body.embed .pane-head{padding:10px 14px;gap:6px;background:#fff;border-bottom:1px solid #e3e1e4}
+body.embed .pane-title{font-size:15px;font-weight:800;color:#1d1c1d}
+body.embed .pane-title::before{content:'🍵 '}
+body.embed .pane-edit,body.embed .pane-del,body.embed .pane-share,body.embed .pane-link,body.embed .pane-pin{
+  background:none;border:none;color:#616061;font-size:13px;padding:2px 4px;opacity:.7}
+body.embed .pane-model{background:#fff;border:1px solid #e3e1e4;border-radius:6px;font-size:11px;padding:3px 6px}
+body.embed .embed-act{flex:none;background:none;border:1px solid #e3e1e4;border-radius:6px;
+  padding:2px 7px;font-size:13px;color:#616061;line-height:1.4}
+body.embed .embed-act:hover{background:#f0f0f0;color:#1d1c1d}
+body.embed .pane-tabs{background:#fff;border-bottom:1px solid #e3e1e4}
+
+/* 発言: 左寄せ・名前つき・紫の四角 (人) / 緑の四角 (chai) */
+body.embed .pane .thread-inner{max-width:none;margin:0;padding:10px 0 14px}
+body.embed .msg{gap:10px;padding:6px 14px;border-bottom:none}
+body.embed .msg:hover{background:#f8f8f8}
+body.embed .msg .avatar{flex:0 0 36px;width:36px;height:36px;border-radius:6px;font-size:14px}
+body.embed .msg.user .avatar{background:#611f69;color:#fff}
+body.embed .msg.assistant .avatar{background:#007a5a;color:#fff;font-size:18px}
+body.embed .msg .body{padding-top:0}
+body.embed .msg .body[data-who]::before{content:attr(data-who);display:block;font-weight:800;font-size:15px;margin-bottom:2px;color:#1d1c1d}
+body.embed .author-name{display:none}
+body.embed .msg .body p{margin:.35em 0}
+body.embed .user-text{white-space:pre-wrap}
+body.embed .empty{margin:10vh auto 0}
+body.embed .empty-logo{font-size:36px}
+
+/* 入力欄: chat と同じ平らな枠 + 緑の「送信」。 下の注記も揃えて、 左右の面の下端を合わせる */
+body.embed .pane-composer-wrap{background:#fff;border-top:1px solid #e3e1e4;padding:8px 12px 10px}
+body.embed .pane-composer-wrap::after{content:'Enter で送信 / Shift+Enter で改行';display:block;font-size:11px;color:#616061;padding:3px 2px 0}
+body.embed .pane-composer{max-width:none;background:#fff;border:1px solid #b9b7ba;border-radius:8px;box-shadow:none;padding:6px 6px 6px 10px;gap:6px}
+body.embed .pane-composer textarea{font-family:inherit;font-size:15px;line-height:1.4;padding:2px 0;min-height:22px}   /* textarea はフォントを継がないので明示 */
+body.embed .btn-send{width:auto;height:auto;border-radius:6px;padding:5px 12px;font-size:15px;font-weight:700;background:#007a5a;color:#fff}
+body.embed .btn-send.stopping{background:#e01e5a}
+body.embed .comp-btn{width:28px;height:28px;border:none;background:none;border-radius:6px;font-size:15px;color:#616061}
+body.embed .comp-btn:hover{background:#f0f0f0}
