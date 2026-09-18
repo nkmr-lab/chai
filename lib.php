@@ -17,9 +17,28 @@ function json_out($data, int $code = 200): void {
     exit;
 }
 
+/**
+ * いまのブラウザの身元。 ふだんは nkmrauth の署名クッキーだけを見る。
+ * auth.test_identity_header に名前が入っている時だけ、 そのヘッダの JSON を身元として受ける。
+ * 本番の config.local.php にはこの鍵が無いので、 抜け道は本番では死んでいる。
+ */
+function chai_identity(): ?array {
+    global $CFG;
+    $hdr = trim((string)($CFG['auth']['test_identity_header'] ?? ''));
+    if ($hdr !== '') {
+        $key = 'HTTP_' . strtoupper(str_replace('-', '_', $hdr));
+        $raw = (string)($_SERVER[$key] ?? '');
+        if ($raw !== '') {
+            $p = json_decode($raw, true);
+            if (is_array($p) && trim((string)($p['email'] ?? '')) !== '') return $p;
+        }
+    }
+    return nkmrauth_identity();
+}
+
 /** JSON API 用のログイン必須ゲート。未ログインは 401（リダイレクトしない）。 */
 function require_login_json(): array {
-    $id = nkmrauth_identity();
+    $id = chai_identity();
     if (!$id) json_out(['error' => 'auth_required'], 401);
     return $id;
 }

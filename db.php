@@ -5,7 +5,8 @@
  */
 declare(strict_types=1);
 
-$__cfgPath = __DIR__ . '/config.local.php';
+// 設定の場所は環境変数 CHAI_CONFIG で差し替えられる (テストが chai_test を使うため)
+$__cfgPath = getenv('CHAI_CONFIG') ?: (__DIR__ . '/config.local.php');
 if (!is_file($__cfgPath)) {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
