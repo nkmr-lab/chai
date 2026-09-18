@@ -35,6 +35,19 @@ if ($path === '/v1/responses') {
         flush();
     };
     $send('response.created', ['type' => 'response.created', 'response' => ['id' => 'resp_stub']]);
+
+    // 「画像」と頼まれた時は、 本物と同じように道具呼び出し (function_call) を返す。
+    // これで chat.php の 画像生成 → media/ 保存 → markdown 追記 の道が通る。
+    $asked = json_encode($body['input'] ?? [], JSON_UNESCAPED_UNICODE);
+    if (strpos($asked, '画像') !== false) {
+        $send('response.output_item.added', ['type' => 'response.output_item.added',
+            'item' => ['type' => 'function_call', 'name' => 'generate_image']]);
+        $send('response.function_call_arguments.done', ['type' => 'response.function_call_arguments.done',
+            'arguments' => json_encode(['prompt' => 'a small test image'])]);
+        $send('response.completed', ['type' => 'response.completed', 'response' => ['id' => 'resp_stub']]);
+        echo "data: [DONE]" . PHP_EOL . PHP_EOL;
+        exit;
+    }
     foreach (['こんにちは', '。テスト', 'の返事です。'] as $piece) {
         $send('response.output_text.delta', ['type' => 'response.output_text.delta', 'delta' => $piece]);
     }
