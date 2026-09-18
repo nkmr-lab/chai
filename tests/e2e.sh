@@ -65,8 +65,15 @@ check "身元なしで / を開くと auth へ飛ばす" "302" "$CODE"
 HTML=$(curl -s -H "X-Chai-Test-Identity: $ID" "$BASE/")
 contains "ログイン済みなら画面が出る" "$HTML" "window.CHAI"
 contains "自分の名前が埋まっている" "$HTML" "有栖川あゆみ"
-CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/app.js")
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/js/app.js")
 check "app.js が配れる" "200" "$CODE"
+# import される部品も配れること (1 つ欠けると画面が真っ白になる)
+MODNG=0
+for m in util embed api md state dom pane panes convs bookmarks todos pinsets tier stocks share feedback; do
+  C=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/js/$m.js")
+  [ "$C" = "200" ] || { fail "$m.js が配れる" "http=$C"; MODNG=1; }
+done
+[ "$MODNG" = "0" ] && pass "16 個の部品が全部配れる"
 CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/assets/styles.css")
 check "styles.css が配れる" "200" "$CODE"
 HTML=$(curl -s -H "X-Chai-Test-Identity: $ID" "$BASE/?embed=1")

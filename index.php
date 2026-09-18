@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib.php';
 $me = chai_identity() ?: nkmrauth_require();   // ログイン必須（未ログインは auth.nkmr.io へ）
 $state = tier_state($me['email']);
 $logout = nkmrauth_logout_url();
-$ver = 58;                            // ★アプリ版。反映のたびに +1（cache-bust＆画面表示の単一の源）
+$ver = 59;                            // ★アプリ版。反映のたびに +1（cache-bust＆画面表示の単一の源）
 ?><!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -118,6 +118,6 @@ window.CHAI = {
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <script src="/assets/katex/katex.min.js"></script>
-<script src="/assets/app.js?v=<?= $ver ?>"></script>
+<script type="module" src="/assets/js/app.js?v=<?= $ver ?>"></script>
 </body>
 </html>
