@@ -35,3 +35,56 @@ LabPay は「ログイン中の本人ブラウザからの送金」しかでき�
 
 ## デプロイ
 `DEPLOY.md` 参照（nkmr-dev / `/var/www/html/chai/`）。
+
+## 置きかた (2026-09-18 の整理後)
+
+```
+/var/www/chai/
+  index.php            画面の外枠 (ログインを通して骨組みを出す)
+  api.php              JSON API の入口。action => 関数 の表だけ
+  chat.php             返事を作って流すところ。9 段の手順書
+  media.php / media/   画像などの配布と置き場
+  handlers/            api.php の action ごとの中身 (state / conversations / messages /
+                       feedback / shares / stocks / bookmarks / todos / pinsets)
+  lib.php              共通ヘルパの読み込み口 (中身は lib/)
+  lib/
+    http.php           JSON で返す / ログインを確かめる / 本文を読む
+    tier.php           契約とティア (真実の源は LabPay)
+    usage.php          使った量の記録
+    openai_files.php   OpenAI のファイル置き場
+    images.php         画像の生成と保存
+    conv.php           会話の見て良い判定と分類
+    sse.php            少しずつ流すための下ごしらえ
+    chat/              chat.php の手順ごとの中身
+      limits.php       ティアとモデルを決める
+      uploads.php      添付を上げる
+      conversation.php 会話を用意して発言を残す
+      request.php      渡すもの (話・道具・言い添え) を組み立てる
+      stream.php       受けながら流す
+      finish.php       画像や図表を足して、保存して締める
+  assets/styles.css
+  assets/js/           画面。ES モジュール。index.php は app.js 1 本だけ読む
+                       util / embed / api / md / state / dom / pane / panes / convs /
+                       bookmarks / todos / pinsets / tier / stocks / share / feedback / app
+  tests/               テスト一式 (下記)
+```
+
+**モジュールの読み込み**: 入口の `app.js` には `?v=<版>` が付くが、その中の `import` には
+付かない。古い部品が混ざらないよう、vhost で `/assets/js/` に `Cache-Control: no-cache`。
+
+## テスト
+
+本番 DB と本物の OpenAI には繋がない。触るのは `chai_test` DB と偽 OpenAI だけ。
+
+```
+sudo -u apache bash /var/www/chai/tests/e2e.sh     # API 95 + 画面/SSE 23
+NODE_PATH=<jsdomを入れた場所>/node_modules node tests/ui_test.js   # 画面 18 (手元で)
+```
+
+- `tests/run_tests.php` … API 30 アクションを HTTP 越しに
+- `tests/stub_openai.php` … 偽 OpenAI。本物と同じそっけなさで返す
+- `tests/ui_test.js` … jsdom。本番と同じモジュールを読み、骨組みは index.php から取る
+- `tests/config.test.php` … DB を chai_test に、OpenAI を偽サーバに向けるだけ
+
+`auth.test_identity_header` は**本番の config.local.php には無い**(= 抜け道は死んでいる)。
+e2e が毎回それを確かめる。
