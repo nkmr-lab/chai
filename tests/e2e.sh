@@ -115,6 +115,22 @@ else
 fi
 
 echo
+echo "[生成物 (media) がログイン必須か]"
+# php -S には vhost の転送規則が無いので media.php を直接叩いて確かめる
+sudo -n true 2>/dev/null   # (権限が無くても続行する)
+TESTIMG="probe_$(date +%s).png"
+printf 'x' > "$ROOT/media/$TESTIMG" 2>/dev/null
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/media.php?f=$TESTIMG")
+check "身元なしでは渡さない (auth へ)" "302" "$CODE"
+GOT=$(curl -s -H "X-Chai-Test-Identity: $ID" "$BASE/media.php?f=$TESTIMG")
+check "ログインしていれば中身まで渡す" "x" "$GOT"
+CODE=$(curl -s -o /dev/null -w '%{http_code}' -H "X-Chai-Test-Identity: $ID" "$BASE/media.php?f=../config.local.php")
+check "上の階層は渡さない" "400" "$CODE"
+CODE=$(curl -s -o /dev/null -w '%{http_code}' -H "X-Chai-Test-Identity: $ID" "$BASE/media.php?f=nosuchfile.png")
+check "無いものは 404" "404" "$CODE"
+rm -f "$ROOT/media/$TESTIMG"
+
+echo
 echo "[php のエラーログが空か]"
 ERRS=$(grep -iE 'PHP (Fatal|Parse|Warning|Notice|Deprecated)' /tmp/chai_app.log | grep -v 'Deprecated.*passing null' | head -5)
 if [ -z "$ERRS" ]; then pass "PHP の警告が出ていない"; else fail "PHP の警告が出ていない" "$ERRS"; fi
